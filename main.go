@@ -16,7 +16,7 @@ type Job struct {
 	Delay int
 }
 
-func execJob(j Job) {
+func (j Job) exec() {
 	resp, err := http.Get(j.Link)
 	var status string
 	if err != nil {
@@ -29,15 +29,15 @@ func execJob(j Job) {
 	fmt.Printf("HIT %s - %s\n", j.Link, status)
 }
 
-func scheduleJob(j Job, wg *sync.WaitGroup) {
+func (j Job) schedule(wg *sync.WaitGroup) {
 	ticker := time.NewTicker(time.Millisecond * time.Duration(j.Delay))
 	defer ticker.Stop()
 	defer wg.Done()
 
-	execJob(j)
+	j.exec()
 
 	for range ticker.C {
-		execJob(j)
+		j.exec()
 	}
 }
 
@@ -66,7 +66,7 @@ func main() {
 	// Schedule all jobs
 	for _, j := range jobs {
 		wg.Add(1)
-		go scheduleJob(j, &wg)
+		go j.schedule(&wg)
 	}
 
 	wg.Wait()
